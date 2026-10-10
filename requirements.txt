@@ -1,0 +1,14 @@
+APScheduler==3.10.4
+beautifulsoup4==4.12.3
+fastapi==0.115.0
+httpx==0.27.2
+pandas==2.2.3
+pydantic==2.9.2
+pydantic-settings==2.6.0
+pymysql==1.1.1
+redis==5.2.0
+requests==2.32.3
+scrapy==2.12.0
+SQLAlchemy==2.0.36
+uvicorn[standard]==0.32.0
+w3lib==2.1.2

@@ -1,0 +1,16 @@
+name: Competitor Price Monitoring
+metrics:
+  - name: Daily Average Price
+    expression: AVG(last_price)
+    dimensions: [date_key, source]
+  - name: Price Change Rate
+    expression: (current_price - previous_price) / previous_price
+    dimensions: [date_key, source, product_key]
+  - name: Out of Stock Rate
+    expression: AVG(availability = 'out_of_stock')
+    dimensions: [date_key, source]
+dashboard_sections:
+  - Executive Overview
+  - Price Anomalies
+  - Category Price Index
+  - Availability Risk

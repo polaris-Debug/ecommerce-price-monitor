@@ -1,0 +1,72 @@
+services:
+  mysql:
+    image: mysql:8.4
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports: ["3306:3306"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      args:
+        INSTALL_PLAYWRIGHT: ${INSTALL_PLAYWRIGHT:-0}
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      args:
+        INSTALL_PLAYWRIGHT: ${INSTALL_PLAYWRIGHT:-0}
+    command: python -m src.scheduler.main
+    env_file: .env
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    restart: unless-stopped
+
+  metabase:
+    image: metabase/metabase:v0.50.31
+    environment:
+      MB_DB_TYPE: mysql
+      MB_DB_DBNAME: ${MYSQL_DATABASE}
+      MB_DB_PORT: 3306
+      MB_DB_USER: ${MYSQL_METABASE_USER}
+      MB_DB_PASS: ${MYSQL_METABASE_PASSWORD}
+      MB_DB_HOST: mysql
+    ports: ["3000:3000"]
+    depends_on:
+      mysql: {condition: service_healthy}
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
